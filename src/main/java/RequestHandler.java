@@ -1,5 +1,4 @@
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -12,7 +11,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.zip.GZIPOutputStream;
 
 public class RequestHandler implements Runnable {
     private static final String CRLF = "\r\n";
@@ -72,16 +70,7 @@ public class RequestHandler implements Runnable {
         byte[] bodyBytes = body.getBytes();
 
         if (zip != null && zip.contains("gzip")) {
-            byte[] compressedBytes = Utils.gzip(bodyBytes);
-
-            String response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain" + CRLF
-                    + "Content-Encoding: gzip" + CRLF
-                    + "Content-Length: " + compressedBytes.length
-                    + CRLF + CRLF;
-            clientSocket.getOutputStream().write(response.getBytes(StandardCharsets.UTF_8));
-            clientSocket.getOutputStream().write(compressedBytes);
-            clientSocket.getOutputStream().flush();
-            return "";
+            return handleGzip(bodyBytes);
         } else
             return "HTTP/1.1 200 OK" + CRLF +
                     "Content-Type: text/plain" + CRLF +
@@ -134,5 +123,18 @@ public class RequestHandler implements Runnable {
 
         return "HTTP/1.1 201 Created\r\n" +
                 "\r\n";
+    }
+
+    private String handleGzip(byte[] bodyBytes) throws IOException {
+        byte[] compressedBytes = Utils.gzip(bodyBytes);
+
+        String response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain" + CRLF
+                + "Content-Encoding: gzip" + CRLF
+                + "Content-Length: " + compressedBytes.length
+                + CRLF + CRLF;
+        clientSocket.getOutputStream().write(response.getBytes(StandardCharsets.UTF_8));
+        clientSocket.getOutputStream().write(compressedBytes);
+        clientSocket.getOutputStream().flush();
+        return "";
     }
 }

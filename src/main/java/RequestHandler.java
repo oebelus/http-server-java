@@ -1,4 +1,6 @@
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -27,11 +29,12 @@ public class RequestHandler implements Runnable {
             final Map<String, String> headers = Utils.getHeaders(in);
 
             String path = requestParts[1];
+            String method = requestParts[0];
 
             String response;
 
             if (path.startsWith("/files")) {
-                response = handleFileRequest(path);
+                response = handleFileRequest(path, method, headers, in);
             } else if (path.startsWith("/echo")) {
                 response = handleEchoRequest(headers, path);
             } else if (path.startsWith("/user-agent")) {
@@ -68,11 +71,17 @@ public class RequestHandler implements Runnable {
                 body;
     }
 
-    private String handleFileRequest(String path) throws IOException {
+    private String handleFileRequest(String path, String method, Map<String, String> headers,
+            BufferedReader in) throws IOException {
         String fileName = path.substring(7);
         Path filePath = Paths.get(directory, fileName);
 
-        return handleGetFileRequest(filePath);
+        if (method.equals("GET"))
+            return handleGetFileRequest(filePath);
+        else if (method.equals("POST"))
+            return handlePostFileRequest(headers, path, in);
+        else
+            return "HTTP/1.1 405 Method Not Allowed" + CRLF + CRLF;
     }
 
     private String handleGetFileRequest(Path filePath) throws IOException {
@@ -87,5 +96,25 @@ public class RequestHandler implements Runnable {
         } else {
             return "HTTP/1.1 404 Not Found" + CRLF + CRLF;
         }
+    }
+
+    private String handlePostFileRequest(Map<String, String> headers, String path,
+            BufferedReader in) throws IOException {
+        File file = new File(directory, path.substring(7));
+
+        FileWriter fileWriter = new FileWriter(file);
+
+        StringBuilder requestBody = new StringBuilder();
+        int length = Integer.parseInt(headers.getOrDefault("content-length", CRLF));
+
+        for (int i = 0; i < length; i++) {
+            requestBody.append((char) in.read());
+        }
+
+        fileWriter.write(requestBody.toString());
+        fileWriter.close();
+
+        return "HTTP/1.1 201 Created\r\n" +
+                "\r\n";
     }
 }

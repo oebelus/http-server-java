@@ -22,4 +22,12 @@ public class Utils {
 
         return headers;
     }
+
+    public static String getBody(String[] arr) {
+        if (arr[0].equals("echo")) {
+            return arr[1];
+        }
+
+        return String.join("/", arr);
+    }
 }

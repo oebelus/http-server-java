@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.Map;
 
 public class RequestHandler implements Runnable {
@@ -24,8 +25,10 @@ public class RequestHandler implements Runnable {
 
             String response;
 
-            if (path.startsWith("/user-agent")) {
-                response = handleUserAgent(headers);
+            if (path.startsWith("/echo")) {
+                response = handleEchoRequest(headers, path);
+            } else if (path.startsWith("/user-agent")) {
+                response = handleUserAgentRequest(headers);
             } else if (path.equals("/")) {
                 response = "HTTP/1.1 200 OK" + CRLF + CRLF;
             } else {
@@ -39,11 +42,22 @@ public class RequestHandler implements Runnable {
         }
     }
 
-    private String handleUserAgent(Map<String, String> headers) {
+    private String handleUserAgentRequest(Map<String, String> headers) {
         String text = headers.get("user-agent");
         return "HTTP/1.1 200 OK" + CRLF +
                 "Content-Type: text/plain" + CRLF +
                 "Content-Length: " + text.length() + CRLF + CRLF +
                 text;
+    }
+
+    private String handleEchoRequest(Map<String, String> headers, String path) {
+        String[] pathArray = path.split("/");
+        pathArray = Arrays.stream(pathArray).filter(x -> !x.isEmpty()).toArray(String[]::new);
+        String body = Utils.getBody(pathArray);
+
+        return "HTTP/1.1 200 OK" + CRLF +
+                "Content-Type: text/plain" + CRLF +
+                "Content-Length: " + body.length() + CRLF + CRLF +
+                body;
     }
 }

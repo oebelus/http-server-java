@@ -3,15 +3,20 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Map;
 
 public class RequestHandler implements Runnable {
     private static final String CRLF = "\r\n";
     private final Socket clientSocket;
+    private final String directory;
 
-    public RequestHandler(Socket clientSocket) {
+    public RequestHandler(Socket clientSocket, String directory) {
         this.clientSocket = clientSocket;
+        this.directory = directory;
     }
 
     public void run() {
@@ -25,7 +30,9 @@ public class RequestHandler implements Runnable {
 
             String response;
 
-            if (path.startsWith("/echo")) {
+            if (path.startsWith("/files")) {
+                response = handleFileRequest(path);
+            } else if (path.startsWith("/echo")) {
                 response = handleEchoRequest(headers, path);
             } else if (path.startsWith("/user-agent")) {
                 response = handleUserAgentRequest(headers);
@@ -59,5 +66,26 @@ public class RequestHandler implements Runnable {
                 "Content-Type: text/plain" + CRLF +
                 "Content-Length: " + body.length() + CRLF + CRLF +
                 body;
+    }
+
+    private String handleFileRequest(String path) throws IOException {
+        String fileName = path.substring(7);
+        Path filePath = Paths.get(directory, fileName);
+
+        return handleGetFileRequest(filePath);
+    }
+
+    private String handleGetFileRequest(Path filePath) throws IOException {
+        if (Files.exists(filePath)) {
+            byte[] fileBytes = Files.readAllBytes(filePath);
+
+            return "HTTP/1.1 200 OK" + CRLF
+                    + "Content-Type: application/octet-stream" + CRLF
+                    + "Content-Length: " + fileBytes.length
+                    + CRLF + CRLF
+                    + new String(fileBytes);
+        } else {
+            return "HTTP/1.1 404 Not Found" + CRLF + CRLF;
+        }
     }
 }

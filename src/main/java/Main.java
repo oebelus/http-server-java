@@ -6,6 +6,10 @@ public class Main {
   private static final int PORT = 4221;
 
   public static void main(String[] args) {
+    String directory = null;
+    if (args.length > 1 && args[0].equals("--directory")) {
+      directory = args[1];
+    }
 
     try (ServerSocket serverSocket = new ServerSocket(PORT)) {
       serverSocket.setReuseAddress(true);
@@ -14,7 +18,7 @@ public class Main {
         Socket clientSocket = serverSocket.accept();
         System.out.println("accepted new connection");
 
-        RequestHandler requestHandler = new RequestHandler(clientSocket);
+        RequestHandler requestHandler = new RequestHandler(clientSocket, directory);
 
         new Thread(requestHandler).start();
       }

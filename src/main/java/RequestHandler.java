@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -70,13 +71,22 @@ public class RequestHandler implements Runnable {
         String zip = headers.get("accept-encoding");
         byte[] bodyBytes = body.getBytes();
 
-        if (zip != null && zip.contains("gzip"))
-            return handleGzipRequest(bodyBytes);
+        if (zip != null && zip.contains("gzip")) {
+            byte[] compressedBytes = Utils.gzip(bodyBytes);
 
-        return "HTTP/1.1 200 OK" + CRLF +
-                "Content-Type: text/plain" + CRLF +
-                "Content-Length: " + body.length() + CRLF + CRLF +
-                body;
+            String response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain" + CRLF
+                    + "Content-Encoding: gzip" + CRLF
+                    + "Content-Length: " + compressedBytes.length
+                    + CRLF + CRLF;
+            clientSocket.getOutputStream().write(response.getBytes(StandardCharsets.UTF_8));
+            clientSocket.getOutputStream().write(compressedBytes);
+            clientSocket.getOutputStream().flush();
+            return "";
+        } else
+            return "HTTP/1.1 200 OK" + CRLF +
+                    "Content-Type: text/plain" + CRLF +
+                    "Content-Length: " + body.length() + CRLF + CRLF +
+                    body;
     }
 
     private String handleFileRequest(String path, String method, Map<String, String> headers,
@@ -124,20 +134,5 @@ public class RequestHandler implements Runnable {
 
         return "HTTP/1.1 201 Created\r\n" +
                 "\r\n";
-    }
-
-    private String handleGzipRequest(byte[] bodyBytes) throws IOException {
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream(bodyBytes.length * 4);
-        GZIPOutputStream zipStream = new GZIPOutputStream(byteStream);
-        zipStream.write(bodyBytes);
-        zipStream.close();
-
-        byte[] compressedBytes = byteStream.toByteArray();
-
-        return "HTTP/1.1 200 OK\r\nContent-Type: text/plain" + CRLF
-                + "Content-Encoding: gzip" + CRLF
-                + "Content-Length: " + compressedBytes.length
-                + CRLF + CRLF
-                + new String(compressedBytes);
     }
 }

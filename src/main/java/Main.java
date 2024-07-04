@@ -13,8 +13,9 @@ public class Main {
       Socket clientSocket = serverSocket.accept();
       System.out.println("accepted new connection");
 
-      new Thread(new RequestHandler(clientSocket)).start();
-      ;
+      RequestHandler requestHandler = new RequestHandler(clientSocket);
+
+      new Thread(requestHandler).start();
 
     } catch (IOException e) {
       System.out.println("IOException: " + e.getMessage());

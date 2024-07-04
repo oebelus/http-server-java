@@ -10,13 +10,14 @@ public class Main {
     try (ServerSocket serverSocket = new ServerSocket(PORT)) {
       serverSocket.setReuseAddress(true);
 
-      Socket clientSocket = serverSocket.accept();
-      System.out.println("accepted new connection");
+      while (true) {
+        Socket clientSocket = serverSocket.accept();
+        System.out.println("accepted new connection");
 
-      RequestHandler requestHandler = new RequestHandler(clientSocket);
+        RequestHandler requestHandler = new RequestHandler(clientSocket);
 
-      new Thread(requestHandler).start();
-
+        new Thread(requestHandler).start();
+      }
     } catch (IOException e) {
       System.out.println("IOException: " + e.getMessage());
     }

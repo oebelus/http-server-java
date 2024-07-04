@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -10,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.zip.GZIPOutputStream;
 
 public class RequestHandler implements Runnable {
     private static final String CRLF = "\r\n";
@@ -60,10 +62,16 @@ public class RequestHandler implements Runnable {
                 text;
     }
 
-    private String handleEchoRequest(Map<String, String> headers, String path) {
+    private String handleEchoRequest(Map<String, String> headers, String path) throws IOException {
         String[] pathArray = path.split("/");
         pathArray = Arrays.stream(pathArray).filter(x -> !x.isEmpty()).toArray(String[]::new);
+
         String body = Utils.getBody(pathArray);
+        String zip = headers.get("accept-encoding");
+        byte[] bodyBytes = body.getBytes();
+
+        if (zip != null && zip.contains("gzip"))
+            return handleGzipRequest(bodyBytes);
 
         return "HTTP/1.1 200 OK" + CRLF +
                 "Content-Type: text/plain" + CRLF +
@@ -116,5 +124,20 @@ public class RequestHandler implements Runnable {
 
         return "HTTP/1.1 201 Created\r\n" +
                 "\r\n";
+    }
+
+    private String handleGzipRequest(byte[] bodyBytes) throws IOException {
+        ByteArrayOutputStream byteStream = new ByteArrayOutputStream(bodyBytes.length * 4);
+        GZIPOutputStream zipStream = new GZIPOutputStream(byteStream);
+        zipStream.write(bodyBytes);
+        zipStream.close();
+
+        byte[] compressedBytes = byteStream.toByteArray();
+
+        return "HTTP/1.1 200 OK\r\nContent-Type: text/plain" + CRLF
+                + "Content-Encoding: gzip" + CRLF
+                + "Content-Length: " + compressedBytes.length
+                + CRLF + CRLF
+                + new String(compressedBytes);
     }
 }

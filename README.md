@@ -1,39 +1,21 @@
-[![progress-banner](https://backend.codecrafters.io/progress/http-server/5ddaf5e2-8b43-4840-936a-8bd672d863c1)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
+# Custom HTTP Server
 
-This is a starting point for Java solutions to the
-["Build Your Own HTTP server" Challenge](https://app.codecrafters.io/courses/http-server/overview).
+This project is a simple HTTP server implemented in Java. It handles various types of HTTP requests, supports file operations, and can serve static files. The server also includes functionality for echoing request paths, retrieving user-agent headers, and supporting gzip compression.
 
-[HTTP](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol) is the
-protocol that powers the web. In this challenge, you'll build a HTTP/1.1 server
-that is capable of serving multiple clients.
+## Features
 
-Along the way you'll learn about TCP servers,
-[HTTP request syntax](https://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html),
-and more.
+- **Supports HTTP Methods**: Handles GET and POST requests.
+- **File Operations**: Serves files from a specified directory and supports file uploads.
+- **Echo Requests**: Returns the request path as a response.
+- **User-Agent Header**: Returns the `User-Agent` header from the request.
+- **Gzip Compression**: Supports gzip compression for responses.
+- **Error Handling**: Returns appropriate HTTP status codes for various conditions.
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
+## Architecture
 
-# Passing the first stage
+The server uses the `RequestHandler` class to process incoming HTTP requests. It performs the following tasks:
 
-The entry point for your HTTP server implementation is in
-`src/main/java/Main.java`. Study and uncomment the relevant code, and push your
-changes to pass the first stage:
-
-```sh
-git add .
-git commit -m "pass 1st stage" # any msg
-git push origin master
-```
-
-Time to move on to the next stage!
-
-# Stage 2 & beyond
-
-Note: This section is for stages 2 and beyond.
-
-1. Ensure you have `java (21)` installed locally
-1. Run `./your_server.sh` to run your program, which is implemented in
-   `src/main/java/Main.java`.
-1. Commit your changes and run `git push origin master` to submit your solution
-   to CodeCrafters. Test output will be streamed to your terminal.
+1. **Request Parsing**: Parses incoming HTTP requests to determine the method, path, and headers.
+2. **Request Handling**: Routes requests based on the path and method.
+3. **Response Generation**: Generates appropriate HTTP responses, including file content and custom messages.
+4. **Error Handling**: Returns status codes for errors such as file not found or method not allowed.
